@@ -61,3 +61,24 @@ class Profile(models.Model):
     @classmethod
     def search_profile(cls, name):
         return cls.objects.filter(user__username__icontains=name).all()
+
+class Comment(models.Model):
+    comment = models.TextField()
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='comments')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    created = models.DateTimeField(auto_now_add=True, null=True)
+
+    def __str__(self):
+        return f'{self.user.name} Post'
+
+    class Meta:
+        ordering = ["-pk"]
+
+
+class Follow(models.Model):
+    followed = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='followers')
+    follower = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='following')
+    
+
+    def __str__(self):
+        return f'{self.follower} Follow'
