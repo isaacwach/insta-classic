@@ -1,8 +1,22 @@
 {% extends 'base.html' %}
+{% include header.html%}
+
 
   {% block content %}
 
-  <h1>Welcome to Insta-connect social app</h1>
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <h1>Welcome to Insta-connect social app</h1>
+      </div>
+      <div class="col">
+          <h3>Register</h3>
+          <p>Signup with us, and start enjoying our social application</p>
+          <button> <a href="/register">Signup</a></button>
+          <p>If you already have an account, <a href="/login">login</a> instead.</p>
+      </div>
+    </div>
+  </div>
 
   {% endblock %}
 
