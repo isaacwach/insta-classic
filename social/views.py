@@ -1,10 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import NewUserForm
+from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
+from .models import Post, Comment, Profile, Follow
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
-
+from django.template.loader import render_to_string
+from rest_framework import authentication, permissions
+from django.views.generic import RedirectView
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 # Create your views here.
 def homepage(request):
@@ -127,5 +133,12 @@ def index(request):
         'users': users,
 
     }
-    return render(request, 'instagram/index.html', params)
+    return render(request, 'main.html', params)
+
+def follow(request, to_follow):
+    if request.method == 'GET':
+        user_profile3 = Profile.objects.get(pk=to_follow)
+        follow_s = Follow(follower=request.user.profile, followed=user_profile3)
+        follow_s.save()
+        return redirect('user_profile', user_profile3.user.username)
 
