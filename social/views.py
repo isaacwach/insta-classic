@@ -23,7 +23,7 @@ def register_request(request):
 			user = form.save()
 			login(request, user)
 			messages.success(request, "Registration successful." )
-			return redirect("/login")
+			return redirect("social:homepage")
 		messages.error(request, "Unsuccessful registration. Invalid information.")
 	form = NewUserForm()
 	return render (request=request, template_name="register.html", context={"register_form":form})
@@ -47,6 +47,26 @@ def login_request(request):
 	return render(request=request, template_name="login.html", context={"login_form":form})
 
 @login_required(login_url='login')
+def profile(request, username):
+    images = request.user.profile.posts.all()
+    if request.method == 'POST':
+        user_form = UpdateUserForm(request.POST, instance=request.user)
+        prof_form = UpdateUserProfileForm(request.POST, request.FILES, instance=request.user.profile)
+        if user_form.is_valid() and prof_form.is_valid():
+            user_form.save()
+            prof_form.save()
+            return HttpResponseRedirect(request.path_info)
+    else:
+        user_form = UpdateUserForm(instance=request.user)
+        prof_form = UpdateUserProfileForm(instance=request.user.profile)
+    params = {
+        'user_form': user_form,
+        'prof_form': prof_form,
+        'images': images,
+
+    }
+    return render(request, 'profile.html', params)
+@login_required(login_url='login')
 def user_profile(request, username):
     user_prof = get_object_or_404(User, username=username)
     if request.user == user_prof:
@@ -67,28 +87,8 @@ def user_profile(request, username):
         'follow_status': follow_status
     }
     print(followers)
-    return render(request, 'instagram/user_profile.html', params)
+    return render(request, 'user_profile.html', params)
 
-@login_required(login_url='login')
-def profile(request, username):
-    images = request.user.profile.posts.all()
-    if request.method == 'POST':
-        user_form = UpdateUserForm(request.POST, instance=request.user)
-        prof_form = UpdateUserProfileForm(request.POST, request.FILES, instance=request.user.profile)
-        if user_form.is_valid() and prof_form.is_valid():
-            user_form.save()
-            prof_form.save()
-            return HttpResponseRedirect(request.path_info)
-    else:
-        user_form = UpdateUserForm(instance=request.user)
-        prof_form = UpdateUserProfileForm(instance=request.user.profile)
-    params = {
-        'user_form': user_form,
-        'prof_form': prof_form,
-        'images': images,
-
-    }
-    return render(request, 'instagram/profile.html', params)
 
 @login_required(login_url='login')
 def post_comment(request, id):
@@ -112,7 +112,7 @@ def post_comment(request, id):
         'is_liked': is_liked,
         'total_likes': image.total_likes()
     }
-    return render(request, 'instagram/single_post.html', params)
+    return render(request, 'single_post.html', params)
 
 @login_required(login_url='login')
 def index(request):
@@ -160,7 +160,7 @@ def search_profile(request):
             'results': results,
             'message': message
         }
-        return render(request, 'instagram/results.html', params)
+        return render(request, 'results.html', params)
     else:
         message = "You haven't searched for any image category"
-    return render(request, 'instagram/results.html', {'message': message})
+    return render(request, 'results.html', {'message': message})
