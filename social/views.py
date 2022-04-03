@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import NewUserForm
+from .forms import NewUserForm, UpdateUserForm, UpdateUserProfileForm, PostForm, CommentForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
 from .models import Post, Comment, Profile, Follow
@@ -13,45 +13,59 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 # Create your views here.
+
+
 def homepage(request):
-	return render(request=request, template_name='index.html')
+    return render(request=request, template_name='index.html')
+
 
 def register_request(request):
-	if request.method == "POST":
-		form = NewUserForm(request.POST)
-		if form.is_valid():
-			user = form.save()
-			login(request, user)
-			messages.success(request, "Registration successful." )
-			return redirect("social:homepage")
-		messages.error(request, "Unsuccessful registration. Invalid information.")
-	form = NewUserForm()
-	return render (request=request, template_name="register.html", context={"register_form":form})
+    print("heey",request.method)
+    if request.method == "POST":
+        form = NewUserForm(request.POST)
+        print("hello")
+        print(form.is_valid())
+        for field in form:
+            messages.error(request, field.errors)
+            print("Field Error:", field.name,  field.errors)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Registration successful.")
+            print("Registration successful.")
+            return redirect("/login")
+        messages.error(
+                request, "Unsuccessful registration. Invalid information.")
+    form = NewUserForm()
+    return render(request=request, template_name="register.html", context={"register_form": form})
+
 
 def login_request(request):
-	if request.method == "POST":
-		form = AuthenticationForm(request, data=request.POST)
-		if form.is_valid():
-			username = form.cleaned_data.get('username')
-			password = form.cleaned_data.get('password')
-			user = authenticate(username=username, password=password)
-			if user is not None:
-				login(request, user)
-				messages.info(request, f"You are now logged in as {username}.")
-				return redirect("social:homepage")
-			else:
-				messages.error(request,"Invalid username or password.")
-		else:
-			messages.error(request,"Invalid username or password.")
-	form = AuthenticationForm()
-	return render(request=request, template_name="login.html", context={"login_form":form})
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.info(request, f"You are now logged in as {username}.")
+                return redirect("/main")
+            else:
+                messages.error(request, "Invalid username or password.")
+        else:
+            messages.error(request, "Invalid username or password.")
+    form = AuthenticationForm()
+    return render(request=request, template_name="login.html", context={"login_form": form})
+
 
 @login_required(login_url='login')
 def profile(request, username):
     images = request.user.profile.posts.all()
     if request.method == 'POST':
         user_form = UpdateUserForm(request.POST, instance=request.user)
-        prof_form = UpdateUserProfileForm(request.POST, request.FILES, instance=request.user.profile)
+        prof_form = UpdateUserProfileForm(
+            request.POST, request.FILES, instance=request.user.profile)
         if user_form.is_valid() and prof_form.is_valid():
             user_form.save()
             prof_form.save()
@@ -66,13 +80,15 @@ def profile(request, username):
 
     }
     return render(request, 'profile.html', params)
+
+
 @login_required(login_url='login')
 def user_profile(request, username):
     user_prof = get_object_or_404(User, username=username)
     if request.user == user_prof:
         return redirect('profile', username=request.user.username)
     user_posts = user_prof.profile.posts.all()
-    
+
     followers = Follow.objects.filter(followed=user_prof.profile)
     follow_status = None
     for follower in followers:
@@ -114,6 +130,7 @@ def post_comment(request, id):
     }
     return render(request, 'single_post.html', params)
 
+
 @login_required(login_url='login')
 def index(request):
     images = Post.objects.all()
@@ -135,19 +152,24 @@ def index(request):
     }
     return render(request, 'main.html', params)
 
+
 def follow(request, to_follow):
     if request.method == 'GET':
         user_profile3 = Profile.objects.get(pk=to_follow)
-        follow_s = Follow(follower=request.user.profile, followed=user_profile3)
+        follow_s = Follow(follower=request.user.profile,
+                          followed=user_profile3)
         follow_s.save()
         return redirect('user_profile', user_profile3.user.username)
+
 
 def unfollow(request, to_unfollow):
     if request.method == 'GET':
         user_profile2 = Profile.objects.get(pk=to_unfollow)
-        unfollow_d = Follow.objects.filter(follower=request.user.profile, followed=user_profile2)
+        unfollow_d = Follow.objects.filter(
+            follower=request.user.profile, followed=user_profile2)
         unfollow_d.delete()
         return redirect('user_profile', user_profile2.user.username)
+
 
 @login_required(login_url='login')
 def search_profile(request):
